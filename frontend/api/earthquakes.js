@@ -50,8 +50,20 @@ async function fetchEarthquakeData() {
     const magnitudeCell = $(cells[4]);
     const locationCell = $(cells[5]);
 
-    let dateTime = dateTimeCell.find("a").text().trim();
+    // Grab the <a> inside Date/Time cell if present
+    const linkEl = dateTimeCell.find("a");
+    let dateTime = linkEl.text().trim();
     if (!dateTime) dateTime = dateTimeCell.text().trim();
+
+    let detailLink = null;
+    if (linkEl.length) {
+      const href = linkEl.attr("href");
+      if (href && href.trim() && href !== "#") {
+        detailLink = href.startsWith("http")
+          ? href
+          : new URL(href, BASE_URL).href; // handle relative links
+      }
+    }
 
     const magnitude = magnitudeCell.text().trim();
 
@@ -69,6 +81,7 @@ async function fetchEarthquakeData() {
         depth: depthCell.text().trim(),
         magnitude,
         location: locationCell.text().trim(),
+        detailLink, 
       });
     }
   });
@@ -83,7 +96,9 @@ async function fetchEarthquakeData() {
 module.exports = async (req, res) => {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
-    return res.status(405).json({ success: false, error: "Method not allowed" });
+    return res
+      .status(405)
+      .json({ success: false, error: "Method not allowed" });
   }
 
   try {
