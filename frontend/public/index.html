@@ -144,7 +144,8 @@
     }).addTo(map);
 
     let markersLayer = L.layerGroup().addTo(map);
-    const API_URL = "http://localhost:3001/api/earthquakes";
+    // const API_URL = "http://localhost:3001/api/earthquakes"; // uncomment for local testing
+    const API_URL = "/api/earthquakes"; // hosting
 
     const lastUpdatedEl = document.getElementById("last-updated");
     const tableBody = document.getElementById("table-body");
