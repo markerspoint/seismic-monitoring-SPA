@@ -216,7 +216,7 @@ function renderMarkers() {
     });
 
     const popupHtml = `
-          <div class="text-xs">
+          <div class="text-xs z-50">
             <div class="font-bold text-lg mb-1" style="color: ${color};">
               Magnitude: ${magLabel}
             </div>
