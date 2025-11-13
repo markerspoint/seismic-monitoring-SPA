@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PH Earthquake Tracker</title>
+  <title>Philippine Seismic Activity Monitoring</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <!-- Tailwind 3 CDN -->
@@ -13,33 +13,34 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
+  <link rel="stylesheet" href="./map.css">
 
-  <style>
-    /* ensure map has a height */
-    #map {
-      height: 480px;
-    }
-  </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
-  <div class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Header -->
-    <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+  <!-- NAVBAR -->
+  <nav class="w-full bg-slate-900/80 border-b border-slate-800 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <!-- LEFT: Title -->
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
-          PH Earthquake Tracker
+        <h1 class="text-lg sm:text-2xl font-bold tracking-tight">
+          Philippine Seismic Activity Monitoring
         </h1>
-        <p class="text-slate-400 text-sm sm:text-base">
+        <p class="hidden sm:block text-slate-400 text-sm">
           Live earthquakes from PHIVOLCS, plotted on an interactive map.
         </p>
       </div>
-      <div class="flex flex-col items-start sm:items-end gap-1 text-sm">
-        <span id="last-updated" class="text-slate-400">
+
+      <!-- RIGHT SIDE -->
+      <div class="flex items-center gap-3">
+        <!-- Last updated (desktop only) -->
+        <span class="hidden sm:block text-slate-400 text-sm" id="last-updated">
           Last updated: <span class="italic">loading…</span>
         </span>
+
+        <!-- Refresh button (desktop) -->
         <button
           id="refresh-btn"
-          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/90 hover:bg-sky-400 text-xs font-medium shadow-sm transition"
+          class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/90 hover:bg-sky-400 text-xs font-medium shadow-sm transition"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="M21 2v6h-6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -49,10 +50,39 @@
           </svg>
           Refresh
         </button>
-      </div>
-    </header>
 
-    <!-- Controls -->
+        <!-- Mobile-only burger -->
+        <button
+          id="mobile-menu-btn"
+          class="sm:hidden text-2xl text-slate-200"
+        >
+          ☰
+        </button>
+      </div>
+    </div>
+
+    <div id="mobile-menu" class="sm:hidden hidden px-4 pb-3 space-y-3">
+      <p class="text-slate-400 text-xs">
+        Last updated: <span id="last-updated-mobile" class="italic">loading…</span>
+      </p>
+
+      <button
+        id="refresh-btn-mobile"
+        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-medium shadow-sm transition"
+      >
+        🔄 Refresh
+      </button>
+
+      <button
+        id="open-recent-btn"
+        class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition"
+      >
+        📋 Recent earthquakes
+      </button>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-4 py-6">
     <section
       class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-900/60 border border-slate-800 rounded-2xl px-4 py-3"
     >
@@ -74,13 +104,19 @@
             <option value="5.0">5.0+</option>
           </select>
         </label>
+
+        <button
+          id="locate-btn"
+          class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] sm:text-xs font-medium text-slate-100 border border-slate-700"
+          type="button"
+        >
+          📍 Use my location
+        </button>
       </div>
     </section>
 
-    <!-- Main layout -->
     <main class="grid grid-cols-1 lg:grid-cols-5 gap-5">
-      <!-- Map -->
-      <section class="lg:col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden">
+      <section class="lg:col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden z-40">
         <div class="border-b border-slate-800 px-4 py-2 flex items-center justify-between">
           <h2 class="text-sm font-semibold text-slate-100">Map</h2>
           <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
@@ -90,257 +126,138 @@
         <div id="map"></div>
       </section>
 
-    <!-- Table -->
-    <section class="lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl flex flex-col"
-            style="height: 480px;">
-    <div class="border-b border-slate-800 px-4 py-2 flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-slate-100">Recent earthquakes</h2>
-        <span id="count-badge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
-        0 events
-        </span>
-    </div>
+      <!-- Table (DESKTOP ONLY) -->
+      <section
+        class="hidden lg:flex lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl flex-col"
+        style="height: 480px;"
+      >
+        <div class="border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-100">Recent earthquakes</h2>
+          <span id="count-badge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+            0 events
+          </span>
+        </div>
 
-    <!-- Scroll area fills remaining height -->
-    <div class="flex-1 overflow-y-auto">
-        <table class="w-full text-xs sm:text-[13px] text-left">
-        <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
-            <tr class="text-slate-300 border-b border-slate-800">
-            <th class="px-3 py-2 font-medium">Mag</th>
-            <th class="px-3 py-2 font-medium">Time</th>
-            <th class="px-3 py-2 font-medium">Location</th>
-            <th class="px-3 py-2 font-medium text-right">Depth (km)</th>
-            </tr>
-        </thead>
+        <!-- Scroll area fills remaining height -->
+        <div class="flex-1 overflow-y-auto">
+          <table class="w-full text-xs sm:text-[13px] text-left">
+            <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
+              <tr class="text-slate-300 border-b border-slate-800">
+                <th class="px-3 py-2 font-medium">Mag</th>
+                <th class="px-3 py-2 font-medium">Time</th>
+                <th class="px-3 py-2 font-medium">Location</th>
+                <th class="px-3 py-2 font-medium text-right">Depth (km)</th>
+              </tr>
+            </thead>
 
-        <tbody id="table-body">
-            <tr id="loading-row">
-            <td colspan="4" class="px-3 py-4 text-center text-slate-400">
-                Loading latest earthquakes…
-            </td>
-            </tr>
-        </tbody>
-        </table>
-    </div>
-    </section>
+            <tbody id="table-body">
+              <tr id="loading-row">
+                <td colspan="4" class="px-3 py-4 text-center text-slate-400">
+                  Loading latest earthquakes…
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
 
-    <!-- Toast / error -->
+    <div
+      id="recent-modal"
+      class="fixed inset-0 z-40 hidden"
+    >
+      <!-- backdrop -->
+      <div
+        id="recent-modal-backdrop"
+        class="absolute inset-0 bg-slate-950/70"
+      ></div>
+
+      <!-- slide-in panel -->
+      <div
+        class="absolute inset-y-0 right-0 w-full max-w-md bg-slate-950 border-l border-slate-800 shadow-2xl flex flex-col"
+      >
+        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-100">Recent earthquakes</h2>
+            <p class="text-[11px] text-slate-400">Latest events from PHIVOLCS</p>
+          </div>
+          <button
+            id="close-recent-btn"
+            class="inline-flex items-center justify-center rounded-full w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm"
+            type="button"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
+              <tr class="text-slate-300 border-b border-slate-800">
+                <th class="px-3 py-2 font-medium">Mag</th>
+                <th class="px-3 py-2 font-medium">Time</th>
+                <th class="px-3 py-2 font-medium">Location</th>
+                <th class="px-3 py-2 font-medium text-right">Depth (km)</th>
+              </tr>
+            </thead>
+            <tbody id="table-body-mobile">
+              <tr>
+                <td colspan="4" class="px-3 py-4 text-center text-slate-400">
+                  Loading latest earthquakes…
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="location-modal"
+         class="fixed inset-0 bg-slate-900/80 backdrop-blur flex items-center justify-center z-50">
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 max-w-sm w-full text-center">
+        <h2 class="text-lg font-semibold mb-2">Allow Location Access?</h2>
+        <p class="text-slate-300 text-sm mb-4">
+          This helps show your position on the map relative to recent earthquakes.
+        </p>
+
+        <div class="flex gap-3 justify-center">
+          <button id="allow-location"
+                  class="px-4 py-2 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm">
+            Allow
+          </button>
+
+          <button id="deny-location"
+                  class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm">
+            No thanks
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div
       id="error-toast"
       class="hidden fixed bottom-4 right-4 max-w-xs bg-red-600 text-white text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-lg border border-red-400/70"
     ></div>
   </div>
 
-  <!-- Leaflet JS -->
+<footer class="mt-10 w-full border-t border-slate-800 bg-slate-900/60 py-4">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
+    <p class="text-center sm:text-left">
+      © 2025 PH Seismic Monitor • Data source: 
+      <span class="text-sky-400 font-medium">PHIVOLCS</span><br class="sm:hidden">
+      Developed by 
+      <a href="https://www.facebook.com/YOUR_FACEBOOK_USERNAME" 
+         target="_blank" 
+         class="text-sky-400 font-semibold hover:text-sky-300 transition">
+        Mark Ian D. Dela Cruz
+      </a>
+    </p>
+  </div>
+</footer>
+
+
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <script>
-    // ---- BASIC MAP INITIALIZATION ----
-    const map = L.map("map").setView([12.8797, 121.7740], 5); // Center on PH
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 18,
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
-
-    let markersLayer = L.layerGroup().addTo(map);
-    // const API_URL = "http://localhost:3001/api/earthquakes"; // uncomment for local testing
-    const API_URL = "/api/earthquakes"; // hosting
-
-    const lastUpdatedEl = document.getElementById("last-updated");
-    const tableBody = document.getElementById("table-body");
-    const countBadge = document.getElementById("count-badge");
-    const errorToast = document.getElementById("error-toast");
-    const minMagSelect = document.getElementById("min-mag");
-    const refreshBtn = document.getElementById("refresh-btn");
-
-    let allEarthquakes = [];
-
-    function showError(message) {
-      errorToast.textContent = message;
-      errorToast.classList.remove("hidden");
-      setTimeout(() => {
-        errorToast.classList.add("hidden");
-      }, 4000);
-    }
-
-    function formatDateTime(raw) {
-      return raw || "N/A";
-    }
-
-    function updateLastUpdated() {
-      const now = new Date();
-      lastUpdatedEl.innerHTML =
-        "Last updated: <span class='font-medium'>" + now.toLocaleString() + "</span>";
-    }
-
-    function clearMarkers() {
-      markersLayer.clearLayers();
-    }
-
-    function getFilteredEarthquakes() {
-      const minMag = parseFloat(minMagSelect.value || "0");
-      return allEarthquakes.filter((eq) =>
-        isNaN(minMag) ? true : (eq.magnitude || 0) >= minMag
-      );
-    }
-
-    function renderMarkers() {
-      clearMarkers();
-      const filtered = getFilteredEarthquakes();
-
-      filtered.forEach((eq) => {
-        if (
-          typeof eq.lat !== "number" ||
-          typeof eq.lon !== "number" ||
-          Number.isNaN(eq.lat) ||
-          Number.isNaN(eq.lon)
-        ) {
-          return;
-        }
-
-        const size = Math.max((eq.magnitude || 0) * 2, 4);
-
-        const circle = L.circleMarker([eq.lat, eq.lon], {
-          radius: size,
-          weight: 1,
-        });
-
-        const popupHtml = `
-          <div class="text-xs">
-            <div class="font-semibold text-base">${(eq.magnitude ?? "?").toFixed
-              ? eq.magnitude.toFixed(1)
-              : eq.magnitude}</div>
-            <div class="text-slate-400">${eq.location || "Unknown location"}</div>
-            <div class="text-slate-400 mt-1">${formatDateTime(eq.datetime)}</div>
-            <div class="text-slate-400">Depth: ${eq.depth_km ?? "?"} km</div>
-            <div class="mt-1 text-[11px] text-slate-400">Source: PHIVOLCS</div>
-          </div>
-        `;
-
-        circle.bindPopup(popupHtml);
-        circle.addTo(markersLayer);
-      });
-    }
-
-    function renderTable() {
-      const filtered = getFilteredEarthquakes();
-
-      tableBody.innerHTML = "";
-
-      if (!filtered.length) {
-        tableBody.innerHTML =
-          '<tr><td colspan="4" class="px-3 py-4 text-center text-slate-400">No earthquakes found for this filter.</td></tr>';
-        countBadge.textContent = "0 events";
-        return;
-      }
-
-      filtered.forEach((eq) => {
-        const tr = document.createElement("tr");
-        tr.className = "border-b border-slate-800/60 hover:bg-slate-800/50";
-
-        const mag =
-          eq.magnitude != null && !Number.isNaN(eq.magnitude)
-            ? eq.magnitude.toFixed(1)
-            : "?";
-
-        tr.innerHTML = `
-          <td class="px-3 py-2 whitespace-nowrap">
-            <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-              eq.magnitude >= 5
-                ? "bg-red-600/20 text-red-400"
-                : eq.magnitude >= 4
-                ? "bg-amber-500/20 text-amber-300"
-                : "bg-emerald-500/15 text-emerald-300"
-            }">
-              ${mag}
-            </span>
-          </td>
-          <td class="px-3 py-2 align-top">
-            <div class="text-xs text-slate-100">${formatDateTime(eq.datetime)}</div>
-          </td>
-          <td class="px-3 py-2 align-top">
-            <div class="text-xs text-slate-100">${eq.location || "Unknown"}</div>
-          </td>
-          <td class="px-3 py-2 align-top text-right text-xs text-slate-200">
-            ${eq.depth_km != null && !Number.isNaN(eq.depth_km) ? eq.depth_km : "?"}
-          </td>
-        `;
-
-        tableBody.appendChild(tr);
-      });
-
-      countBadge.textContent = filtered.length + (filtered.length === 1 ? " event" : " events");
-    }
-
-    // ---- NEW: helpers to parse your API format ----
-    function parseNumber(val) {
-      if (val === undefined || val === null) return null;
-      const num = parseFloat(String(val).replace(/[^\d.-]/g, ""));
-      return isNaN(num) ? null : num;
-    }
-
-    function parseCoord(val) {
-      if (val === undefined || val === null) return null;
-      let s = String(val).trim();
-      let sign = 1;
-      if (/[SW]/i.test(s)) sign = -1;
-      const num = parseFloat(s.replace(/[^\d.]/g, ""));
-      return isNaN(num) ? null : sign * num;
-    }
-
-    async function loadEarthquakes() {
-      tableBody.innerHTML =
-        '<tr><td colspan="4" class="px-3 py-4 text-center text-slate-400">Loading latest earthquakes…</td></tr>';
-
-      try {
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error("API error: " + res.status);
-        const data = await res.json();
-
-        // Your server returns: { success, data: [...], cached, lastUpdated, count }
-        const rawArray = Array.isArray(data)
-          ? data
-          : (data.data || data.earthquakes || []);
-
-        allEarthquakes = rawArray.map((eq) => ({
-          datetime: eq.dateTime || eq.datetime || eq.time || "",
-          lat: parseCoord(eq.latitude ?? eq.lat),
-          lon: parseCoord(eq.longitude ?? eq.lon),
-          depth_km: parseNumber(eq.depth ?? eq.depth_km),
-          magnitude: parseNumber(eq.magnitude ?? eq.mag),
-          location: eq.location || "",
-        }));
-
-        // Optional: sort newest first by datetime string
-        allEarthquakes.sort((a, b) => {
-          return new Date(b.datetime) - new Date(a.datetime);
-        });
-
-        updateLastUpdated();
-        renderMarkers();
-        renderTable();
-      } catch (err) {
-        console.error(err);
-        showError("Failed to load earthquakes. Check if the Node API is running.");
-        tableBody.innerHTML =
-          '<tr><td colspan="4" class="px-3 py-4 text-center text-red-400">Error loading data from API.</td></tr>';
-        countBadge.textContent = "0 events";
-      }
-    }
-
-    // Events
-    minMagSelect.addEventListener("change", () => {
-      renderMarkers();
-      renderTable();
-    });
-
-    refreshBtn.addEventListener("click", () => {
-      loadEarthquakes();
-    });
-
-    // Initial load
-    loadEarthquakes();
-  </script>
+  <script src="./function.js"></script>
 </body>
 </html>
