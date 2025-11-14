@@ -7,9 +7,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="./img/image.png" />
 
     <link rel="apple-touch-icon" href="./img/image.png" />
-
     <link rel="manifest" href="manifest.json" />
-
     <link rel="mask-icon" href="./img/image.svg" color="#0ea5e9" />
 
     <title>Philippine Seismic Activity Monitoring</title>
@@ -33,123 +31,170 @@
     </style>
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen">
-    <!-- NAVBAR -->
-    <nav
-      class="w-full bg-slate-900/80 border-b border-slate-800 backdrop-blur sticky top-0 z-50"
-    >
-      <div
-        class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between"
+    <!-- PAGE CONTENT (padding-bottom so it doesn't go under sticky footer) -->
+    <div class="pb-20">
+      <!-- NAVBAR -->
+      <nav
+        class="w-full bg-slate-900/80 border-b border-slate-800 backdrop-blur sticky top-0 z-50"
       >
-        <div class="flex items-center gap-3">
-          <img src="./img/image.png" alt="Logo" class="w-8 h-8 rounded-md" />
+        <div
+          class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-3">
+            <img
+              src="./img/image.png"
+              alt="Logo"
+              class="w-8 h-8 rounded-md"
+            />
 
-          <div>
-            <h1
-              class="font-bold tracking-tight bg-gradient-to-r from-[#ef2c27] to-[#f9983b] bg-clip-text text-transparent text-[clamp(1.1rem, 4vw, 1.75rem)]"
+            <div>
+              <h1
+                class="font-bold tracking-tight bg-gradient-to-r from-[#ef2c27] to-[#f9983b] bg-clip-text text-transparent text-[clamp(1.1rem,4vw,1.75rem)]"
+              >
+                Philippine Seismic Activity Monitoring
+              </h1>
+
+              <p class="hidden sm:block text-slate-400 text-sm">
+                Live earthquakes from PHIVOLCS, plotted on an interactive map.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <!-- Last updated (desktop only) -->
+            <span
+              class="hidden sm:block text-slate-400 text-sm"
+              id="last-updated"
             >
-              Philippine Seismic Activity Monitoring
-            </h1>
+              Last updated: <span class="italic">loading…</span>
+            </span>
 
-            <p class="hidden sm:block text-slate-400 text-sm">
-              Live earthquakes from PHIVOLCS, plotted on an interactive map.
-            </p>
+            <!-- Refresh button (desktop) -->
+            <button
+              id="refresh-btn"
+              class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/90 hover:bg-sky-400 text-xs font-medium shadow-sm transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  d="M21 2v6h-6"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M3 22v-6h6"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M4 10a8 8 0 0 1 13-5l4 3"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M20 14a8 8 0 0 1-13 5l-4-3"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Refresh
+            </button>
+
+            <!-- Mobile-only burger -->
+            <button
+              id="mobile-menu-btn"
+              class="sm:hidden text-2xl text-slate-200"
+            >
+              ☰
+            </button>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <!-- Last updated (desktop only) -->
-          <span
-            class="hidden sm:block text-slate-400 text-sm"
-            id="last-updated"
-          >
-            Last updated: <span class="italic">loading…</span>
-          </span>
 
-          <!-- Refresh button (desktop) -->
+        <div id="mobile-menu" class="sm:hidden hidden px-4 pb-3 space-y-3">
+          <p class="text-slate-400 text-xs">
+            Last updated:
+            <span id="last-updated-mobile" class="italic">loading…</span>
+          </p>
+
           <button
-            id="refresh-btn"
-            class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/90 hover:bg-sky-400 text-xs font-medium shadow-sm transition"
+            id="refresh-btn-mobile"
+            class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-medium shadow-sm transition"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path
-                d="M21 2v6h-6"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M3 22v-6h6"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M4 10a8 8 0 0 1 13-5l4 3"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M20 14a8 8 0 0 1-13 5l-4-3"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             Refresh
           </button>
 
-          <!-- Mobile-only burger -->
           <button
-            id="mobile-menu-btn"
-            class="sm:hidden text-2xl text-slate-200"
+            id="open-recent-btn"
+            class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition"
           >
-            ☰
+            <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+            Recent earthquakes
           </button>
+
+          <!-- NEW: controls in the navbar modal (MOBILE ONLY) -->
+          <div class="mt-3 pt-3 border-t border-slate-800 space-y-3">
+            <div class="flex items-center gap-2 text-xs text-slate-300">
+              <span
+                class="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"
+              ></span>
+              <span>Data source: PHIVOLCS</span>
+            </div>
+
+            <div class="flex flex-col gap-2 text-xs">
+              <label class="flex items-center justify-between gap-2">
+                <span class="text-slate-300">Min magnitude:</span>
+                <select
+                  id="min-mag-mobile"
+                  class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
+                >
+                  <option value="0">All</option>
+                  <option value="2.0">2.0+</option>
+                  <option value="3.0">3.0+</option>
+                  <option value="4.0">4.0+</option>
+                  <option value="5.0">5.0+</option>
+                </select>
+              </label>
+
+              <button
+                id="locate-btn-mobile"
+                class="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-100 border border-slate-700"
+                type="button"
+              >
+                <i data-lucide="locate-fixed" class="w-4 h-4"></i>
+                Use my location
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </nav>
 
-      <div id="mobile-menu" class="sm:hidden hidden px-4 pb-3 space-y-3">
-        <p class="text-slate-400 text-xs">
-          Last updated:
-          <span id="last-updated-mobile" class="italic">loading…</span>
-        </p>
-
-        <button
-          id="refresh-btn-mobile"
-          class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-medium shadow-sm transition"
+      <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- CONTROLS (DESKTOP / TABLET ONLY) -->
+        <section
+          class="mb-4 hidden sm:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-900/60 border border-slate-800 rounded-2xl px-4 py-3"
         >
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-          Refresh
-        </button>
-
-        <button
-          id="open-recent-btn"
-          class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium border border-slate-700 transition"
-        >
-          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
-          Recent earthquakes
-        </button>
-
-        <!-- NEW: controls in the navbar modal (MOBILE ONLY) -->
-        <div class="mt-3 pt-3 border-t border-slate-800 space-y-3">
-          <div class="flex items-center gap-2 text-xs text-slate-300">
+          <div
+            class="flex items-center gap-2 text-xs sm:text-sm text-slate-300"
+          >
             <span
               class="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"
             ></span>
             <span>Data source: PHIVOLCS</span>
           </div>
-
-          <div class="flex flex-col gap-2 text-xs">
-            <label class="flex items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <label class="flex items-center gap-2">
               <span class="text-slate-300">Min magnitude:</span>
               <select
-                id="min-mag-mobile"
+                id="min-mag"
                 class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
               >
                 <option value="0">All</option>
@@ -161,241 +206,214 @@
             </label>
 
             <button
-              id="locate-btn-mobile"
-              class="inline-flex items-center justify-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-100 border border-slate-700"
+              id="locate-btn"
+              class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] sm:text-xs font-medium text-slate-100 border border-slate-700"
               type="button"
             >
               <i data-lucide="locate-fixed" class="w-4 h-4"></i>
               Use my location
             </button>
           </div>
-        </div>
-      </div>
-    </nav>
-
-    <div class="max-w-7xl mx-auto px-4 py-6">
-      <!-- CONTROLS (DESKTOP / TABLET ONLY) -->
-      <section
-        class="mb-4 hidden sm:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-slate-900/60 border border-slate-800 rounded-2xl px-4 py-3"
-      >
-        <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-300">
-          <span
-            class="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse"
-          ></span>
-          <span>Data source: PHIVOLCS</span>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-          <label class="flex items-center gap-2">
-            <span class="text-slate-300">Min magnitude:</span>
-            <select
-              id="min-mag"
-              class="bg-slate-900 border border-slate-700 rounded-xl px-2 py-1 text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
-            >
-              <option value="0">All</option>
-              <option value="2.0">2.0+</option>
-              <option value="3.0">3.0+</option>
-              <option value="4.0">4.0+</option>
-              <option value="5.0">5.0+</option>
-            </select>
-          </label>
-
-          <button
-            id="locate-btn"
-            class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] sm:text-xs font-medium text-slate-100 border border-slate-700"
-            type="button"
-          >
-            <i data-lucide="locate-fixed" class="w-4 h-4"></i>
-            Use my location
-          </button>
-        </div>
-      </section>
-
-      <main class="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <section
-          id="map-section"
-          class="relative lg:col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden z-40"
-        >
-          <div
-            class="border-b border-slate-800 px-4 py-2 flex items-center justify-between map-header"
-          >
-            <h2 class="text-sm font-semibold text-slate-100">Map</h2>
-            <span
-              class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300"
-            >
-              Click markers for details
-            </span>
-          </div>
-
-          <!-- Map wrapper -->
-          <div class="relative w-full h-[480px] map-wrapper">
-            <div id="map" class="w-full h-full"></div>
-
-            <button
-              id="map-fullscreen-btn"
-              type="button"
-              class="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-[11px] text-slate-100 border border-slate-700 shadow lg:hidden"
-            >
-              <i data-lucide="maximize-2" class="w-3 h-3"></i>
-              <span class="hidden sm:inline">Fullscreen</span>
-            </button>
-          </div>
         </section>
 
-        <!-- Table (DESKTOP ONLY) -->
-        <section
-          class="hidden lg:flex lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl flex-col"
-          style="height: 480px"
-        >
-          <div
-            class="border-b border-slate-800 px-4 py-2 flex items-center justify-between"
+        <main class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+          <section
+            id="map-section"
+            class="relative lg:col-span-3 bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden z-40"
           >
-            <h2 class="text-sm font-semibold text-slate-100">
-              Recent earthquakes
-            </h2>
-            <span
-              id="count-badge"
-              class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300"
+            <div
+              class="border-b border-slate-800 px-4 py-2 flex items-center justify-between map-header"
             >
-              0 events
-            </span>
-          </div>
+              <h2 class="text-sm font-semibold text-slate-100">Map</h2>
+              <span
+                class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300"
+              >
+                Click markers for details
+              </span>
+            </div>
 
-          <!-- Scroll area fills remaining height -->
-          <div class="flex-1 overflow-y-auto">
-            <table class="w-full text-xs sm:text-[13px] text-left">
-              <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
-                <tr class="text-slate-300 border-b border-slate-800">
-                  <th class="px-3 py-2 font-medium">Mag</th>
-                  <th class="px-3 py-2 font-medium">Time</th>
-                  <th class="px-3 py-2 font-medium">Location</th>
-                  <th class="px-3 py-2 font-medium text-right">Depth (km)</th>
-                </tr>
-              </thead>
+            <!-- Map wrapper -->
+            <div class="relative w-full h-[480px] map-wrapper">
+              <div id="map" class="w-full h-full"></div>
 
-              <tbody id="table-body">
-                <tr id="loading-row">
-                  <td colspan="4" class="px-3 py-4 text-center text-slate-400">
-                    Loading latest earthquakes…
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
+              <button
+                id="map-fullscreen-btn"
+                type="button"
+                class="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-[11px] text-slate-100 border border-slate-700 shadow lg:hidden"
+              >
+                <i data-lucide="maximize-2" class="w-3 h-3"></i>
+                <span class="hidden sm:inline">Fullscreen</span>
+              </button>
+            </div>
+          </section>
 
-      <div id="recent-modal" class="fixed inset-0 z-50 hidden">
-        <!-- backdrop -->
-        <div
-          id="recent-modal-backdrop"
-          class="absolute inset-0 bg-slate-950/70"
-        ></div>
-
-        <!-- slide-in panel -->
-        <div
-          class="absolute inset-y-0 right-0 w-full max-w-md bg-slate-950 border-l border-slate-800 shadow-2xl flex flex-col"
-        >
-          <div
-            class="px-4 py-3 border-b border-slate-800 flex items-center justify-between"
+          <!-- Table (DESKTOP ONLY) -->
+          <section
+            class="hidden lg:flex lg:col-span-2 bg-slate-900/60 border border-slate-800 rounded-2xl flex-col"
+            style="height: 480px"
           >
-            <div>
+            <div
+              class="border-b border-slate-800 px-4 py-2 flex items-center justify-between"
+            >
               <h2 class="text-sm font-semibold text-slate-100">
                 Recent earthquakes
               </h2>
-              <p class="text-[11px] text-slate-400">
-                Latest events from PHIVOLCS
-              </p>
+              <span
+                id="count-badge"
+                class="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300"
+              >
+                0 events
+              </span>
             </div>
-            <button
-              id="close-recent-btn"
-              class="inline-flex items-center justify-center rounded-full w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm"
-              type="button"
-            >
-              ✕
-            </button>
-          </div>
 
-          <div class="flex-1 overflow-y-auto">
-            <table class="w-full text-xs text-left">
-              <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
-                <tr class="text-slate-300 border-b border-slate-800">
-                  <th class="px-3 py-2 font-medium">Mag</th>
-                  <th class="px-3 py-2 font-medium">Time</th>
-                  <th class="px-3 py-2 font-medium">Location</th>
-                  <th class="px-3 py-2 font-medium text-right">Depth (km)</th>
-                </tr>
-              </thead>
-              <tbody id="table-body-mobile">
-                <tr>
-                  <td colspan="4" class="px-3 py-4 text-center text-slate-400">
-                    Loading latest earthquakes…
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <!-- Scroll area fills remaining height -->
+            <div class="flex-1 overflow-y-auto">
+              <table class="w-full text-xs sm:text-[13px] text-left">
+                <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
+                  <tr class="text-slate-300 border-b border-slate-800">
+                    <th class="px-3 py-2 font-medium">Mag</th>
+                    <th class="px-3 py-2 font-medium">Time</th>
+                    <th class="px-3 py-2 font-medium">Location</th>
+                    <th class="px-3 py-2 font-medium text-right">
+                      Depth (km)
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody id="table-body">
+                  <tr id="loading-row">
+                    <td
+                      colspan="4"
+                      class="px-3 py-4 text-center text-slate-400"
+                    >
+                      Loading latest earthquakes…
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+
+        <div id="recent-modal" class="fixed inset-0 z-50 hidden">
+          <!-- backdrop -->
+          <div
+            id="recent-modal-backdrop"
+            class="absolute inset-0 bg-slate-950/70"
+          ></div>
+
+          <!-- slide-in panel -->
+          <div
+            class="absolute inset-y-0 right-0 w-full max-w-md bg-slate-950 border-l border-slate-800 shadow-2xl flex flex-col"
+          >
+            <div
+              class="px-4 py-3 border-b border-slate-800 flex items-center justify-between"
+            >
+              <div>
+                <h2 class="text-sm font-semibold text-slate-100">
+                  Recent earthquakes
+                </h2>
+                <p class="text-[11px] text-slate-400">
+                  Latest events from PHIVOLCS
+                </p>
+              </div>
+              <button
+                id="close-recent-btn"
+                class="inline-flex items-center justify-center rounded-full w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm"
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="sticky top-0 bg-slate-900/95 backdrop-blur">
+                  <tr class="text-slate-300 border-b border-slate-800">
+                    <th class="px-3 py-2 font-medium">Mag</th>
+                    <th class="px-3 py-2 font-medium">Time</th>
+                    <th class="px-3 py-2 font-medium">Location</th>
+                    <th class="px-3 py-2 font-medium text-right">
+                      Depth (km)
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="table-body-mobile">
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="px-3 py-4 text-center text-slate-400"
+                    >
+                      Loading latest earthquakes…
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div
-        id="location-modal"
-        class="fixed inset-0 bg-slate-900/80 backdrop-blur flex items-center justify-center z-50 hidden"
-      >
         <div
-          class="bg-slate-800 p-6 rounded-2xl border border-slate-700 max-w-sm w-full text-center"
+          id="location-modal"
+          class="fixed inset-0 bg-slate-900/80 backdrop-blur flex items-center justify-center z-50 hidden"
         >
-          <h2 class="text-lg font-semibold mb-2">Allow Location Access?</h2>
-          <p class="text-slate-300 text-sm mb-4">
-            This helps show your position on the map relative to recent
-            earthquakes.
-          </p>
+          <div
+            class="bg-slate-800 p-6 rounded-2xl border border-slate-700 max-w-sm w-full text-center"
+          >
+            <h2 class="text-lg font-semibold mb-2">Allow Location Access?</h2>
+            <p class="text-slate-300 text-sm mb-4">
+              This helps show your position on the map relative to recent
+              earthquakes.
+            </p>
 
-          <div class="flex gap-3 justify-center">
-            <button
-              id="allow-location"
-              class="px-4 py-2 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm"
-            >
-              Allow
-            </button>
+            <div class="flex gap-3 justify-center">
+              <button
+                id="allow-location"
+                class="px-4 py-2 bg-sky-500 hover:bg-sky-400 rounded-xl text-sm"
+              >
+                Allow
+              </button>
 
-            <button
-              id="deny-location"
-              class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm"
-            >
-              No thanks
-            </button>
+              <button
+                id="deny-location"
+                class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm"
+              >
+                No thanks
+              </button>
+            </div>
           </div>
         </div>
+
+        <div
+          id="error-toast"
+          class="hidden fixed z-50 bottom-4 right-4 max-w-xs bg-red-600 text-white text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-lg border border-red-400/70"
+        ></div>
       </div>
-
-      <div
-        id="error-toast"
-        class="hidden fixed z-50 bottom-4 right-4 max-w-xs bg-red-600 text-white text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-lg border border-red-400/70"
-      ></div>
     </div>
 
-  <footer
-    id="page-footer"
-    class="mt-10 w-full border-t border-slate-800 bg-slate-900/60 py-4"
-  >
-    <div
-      class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2"
+    <!-- STICKY FOOTER (always visible) -->
+    <footer
+      id="page-footer"
+      class="fixed bottom-0 left-0 right-0 w-full border-t border-slate-800 bg-slate-900/60 py-3 sm:py-4 z-40"
     >
-      <p class="text-center sm:text-left">
-        © 2025 PH Seismic Monitor • Data source:
-        <span class="text-sky-400 font-medium">PHIVOLCS</span
-        ><br class="sm:hidden" />
-        Developed by
-        <a
-          href="https://www.facebook.com/mrkndlcrz.ide"
-          target="_blank"
-          class="text-sky-400 font-semibold hover:text-sky-300 transition"
-        >
-          Mark Ian D. Dela Cruz
-        </a>
-      </p>
-    </div>
-  </footer>
+      <div
+        class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2"
+      >
+        <p class="text-center sm:text-left">
+          © 2025 PH Seismic Monitor • Data source:
+          <span class="text-sky-400 font-medium">PHIVOLCS</span
+          ><br class="sm:hidden" />
+          Developed by
+          <a
+            href="https://www.facebook.com/mrkndlcrz.ide"
+            target="_blank"
+            class="text-sky-400 font-semibold hover:text-sky-300 transition"
+          >
+            Mark Ian D. Dela Cruz
+          </a>
+        </p>
+      </div>
+    </footer>
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
