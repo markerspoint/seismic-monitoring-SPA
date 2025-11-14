@@ -560,6 +560,16 @@ mobileBtn?.addEventListener("click", () => {
   mobileMenu.classList.toggle("hidden");
 });
 
+// Optional: close menu when tapping the dark backdrop
+mobileMenu?.addEventListener("click", (e) => {
+  if (e.target === mobileMenu) {
+    mobileMenu.classList.add("hidden");
+    document.body.style.overflow = "";
+    mapSection?.classList.remove("pointer-events-none");
+  }
+});
+
+
 // Mobile recent modal open/close
 function openRecentModal() {
   recentModal.classList.remove("hidden");
