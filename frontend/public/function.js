@@ -1,10 +1,15 @@
-// ---- BASIC MAP INITIALIZATION ----
+// -------------------------
+// MAP & BASE LAYERS
+// -------------------------
+
+// Basic Leaflet map initialization
 const map = L.map("map", {
   center: [12.8797, 121.774],
   zoom: 5,
   tapTolerance: 40,
 });
 
+// OSM tiles
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 18,
   attribution: "&copy; OpenStreetMap contributors",
@@ -14,20 +19,33 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 let markersLayer = L.layerGroup().addTo(map);
 let userLayer = L.layerGroup().addTo(map);
 
+// API endpoint
 // const API_URL = "http://localhost:3001/api/earthquakes"; // local
 const API_URL = "/api/earthquakes"; // hosting
 
+// -------------------------
+// DOM ELEMENT REFERENCES
+// -------------------------
+
 const lastUpdatedEl = document.getElementById("last-updated");
 const lastUpdatedMobile = document.getElementById("last-updated-mobile");
+
 const tableBody = document.getElementById("table-body");
 const tableBodyMobile = document.getElementById("table-body-mobile");
 const countBadge = document.getElementById("count-badge");
 const errorToast = document.getElementById("error-toast");
-const minMagSelect = document.getElementById("min-mag");
-const refreshBtn = document.getElementById("refresh-btn");
-const refreshBtnMobile = document.getElementById("refresh-btn-mobile");
-const locateBtn = document.getElementById("locate-btn");
 
+// Filters / buttons (desktop + mobile)
+const minMagSelect = document.getElementById("min-mag"); // desktop filter
+const minMagSelectMobile = document.getElementById("min-mag-mobile"); // mobile filter
+
+const refreshBtn = document.getElementById("refresh-btn"); // desktop refresh
+const refreshBtnMobile = document.getElementById("refresh-btn-mobile"); // mobile refresh
+
+const locateBtn = document.getElementById("locate-btn"); // desktop locate
+const locateBtnMobile = document.getElementById("locate-btn-mobile"); // mobile locate
+
+// Mobile navbar
 const mobileBtn = document.getElementById("mobile-menu-btn");
 const mobileMenu = document.getElementById("mobile-menu");
 
@@ -42,11 +60,53 @@ const locationModal = document.getElementById("location-modal");
 const allowLocationBtn = document.getElementById("allow-location");
 const denyLocationBtn = document.getElementById("deny-location");
 
+// -------------------------
+// LOCATION PROMPT COOLDOWN
+// -------------------------
+
+const LOCATION_PROMPT_KEY = "ph_seismic_location_prompt_at";
+const LOCATION_PROMPT_COOLDOWN_MS = 5 * 60 * 60 * 1000; // 5 hours
+
+// Decide if we should show the location modal (based on last time stored in localStorage)
+function shouldShowLocationModal() {
+  try {
+    const lastShown = localStorage.getItem(LOCATION_PROMPT_KEY);
+    if (!lastShown) return true; // never shown → show it
+
+    const lastTime = parseInt(lastShown, 10);
+    if (isNaN(lastTime)) return true;
+
+    const elapsed = Date.now() - lastTime;
+    return elapsed > LOCATION_PROMPT_COOLDOWN_MS;
+  } catch (e) {
+    // If localStorage fails for any reason, default to showing once
+    return true;
+  }
+}
+
+// Record the time we last showed/handled the location prompt
+function recordLocationPromptTime() {
+  try {
+    localStorage.setItem(LOCATION_PROMPT_KEY, Date.now().toString());
+  } catch (e) {
+    // ignore storage errors
+  }
+}
+
+// -------------------------
+// STATE
+// -------------------------
+
 let allEarthquakes = [];
 let userLocationMarker = null;
 let userLocationCircle = null;
 
+// -------------------------
+// UI UTILITIES
+// -------------------------
+
 function showError(message) {
+  if (!errorToast) return;
   errorToast.textContent = message;
   errorToast.classList.remove("hidden");
   setTimeout(() => {
@@ -58,6 +118,7 @@ function formatDateTime(raw) {
   return raw || "N/A";
 }
 
+// Update "Last updated" text in both desktop and mobile
 function updateLastUpdated() {
   const nowStr = new Date().toLocaleString();
   if (lastUpdatedEl) {
@@ -69,16 +130,24 @@ function updateLastUpdated() {
   }
 }
 
+// Clear all quake markers (user location layer is separate)
 function clearMarkers() {
-  markersLayer.clearLayers(); // don't clear userLayer here
+  markersLayer.clearLayers();
 }
 
+// Use whichever min-mag select is available: desktop first, fallback to mobile
 function getFilteredEarthquakes() {
-  const minMag = parseFloat(minMagSelect.value || "0");
+  const sourceSelect = minMagSelect || minMagSelectMobile;
+  const minMag = parseFloat(sourceSelect?.value || "0");
+
   return allEarthquakes.filter((eq) =>
     isNaN(minMag) ? true : (eq.magnitude || 0) >= minMag
   );
 }
+
+// -------------------------
+// MAGNITUDE COLOR + LEGEND
+// -------------------------
 
 function getMagnitudeColor(mag) {
   if (mag == null || isNaN(mag)) return "#64748b"; // slate (unknown)
@@ -89,7 +158,7 @@ function getMagnitudeColor(mag) {
   return "#ef4444"; // red (very strong)
 }
 
-// Legend
+// Leaflet legend (collapsible)
 const legend = L.control({ position: "topleft" });
 
 legend.onAdd = function (map) {
@@ -103,45 +172,72 @@ legend.onAdd = function (map) {
     { label: "6.0+", from: 6.0, to: 10.0 },
   ];
 
-  let html = `
-        <div class="legend-title">Legend</div>
-        <div class="legend-title" style="margin-top:6px;">Magnitude</div>
-        <div class="legend-item" style="margin-bottom:4px;">
-          <div style="
-            width: 0;
-            height: 0;
-            border-left: 6px solid transparent;
-            border-right: 6px solid transparent;
-            border-bottom: 10px solid #ef4444;
-          "></div>
-          <span>Latest earthquake</span>
-        </div>
-      `;
+  // Build the body HTML (magnitude content)
+  let bodyHtml = `
+    <div class="legend-title" style="margin-top:6px;">Magnitude</div>
+    <div class="legend-item" style="margin-bottom:4px;">
+      <div style="
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 10px solid #ef4444;
+      "></div>
+      <span>Latest earthquake</span>
+    </div>
+  `;
 
   ranges.forEach((r) => {
     const sampleMag = (r.from + r.to) / 2;
     const color = getMagnitudeColor(sampleMag);
 
-    html += `
-          <div class="legend-item">
-            <span class="color-box" style="background:${color};"></span>
-            <span>${r.label}</span>
-          </div>
-        `;
+    bodyHtml += `
+      <div class="legend-item">
+        <span class="color-box" style="background:${color};"></span>
+        <span>${r.label}</span>
+      </div>
+    `;
   });
 
-  div.innerHTML = html;
+  // Header + body for collapsible behavior
+  div.innerHTML = `
+    <div class="legend-header">
+      <div class="legend-title">Legend</div>
+      <span class="toggle-icon" style="margin-left:4px;">−</span>
+    </div>
+    <div class="legend-body">
+      ${bodyHtml}
+    </div>
+  `;
+
+  const header = div.querySelector(".legend-header");
+  const icon = div.querySelector(".toggle-icon");
+
+  // Toggle collapsed state on click
+  L.DomEvent.on(header, "click", function (e) {
+    L.DomEvent.stopPropagation(e);
+    const collapsed = div.classList.toggle("collapsed");
+    icon.textContent = collapsed ? "+" : "−";
+  });
+
+  // Prevent clicks in the legend from also panning/zooming the map
+  L.DomEvent.disableClickPropagation(div);
+
   return div;
 };
 
 legend.addTo(map);
+
+// -------------------------
+// MARKERS & POPUPS
+// -------------------------
 
 function renderMarkers() {
   clearMarkers();
   const filtered = getFilteredEarthquakes();
   if (!filtered.length) return;
 
-  // latest quake is the first one in the sorted list
+  // Latest quake is the first one in the sorted list
   const latest = filtered[0];
 
   filtered.forEach((eq) => {
@@ -164,7 +260,7 @@ function renderMarkers() {
     const color = getMagnitudeColor(mag);
     const magLabel = mag != null && !Number.isNaN(mag) ? mag.toFixed(1) : "?";
 
-    // LATEST quake → triangle marker
+    // 🔺 Latest quake → triangle marker
     if (eq === latest) {
       const triangleIcon = L.divIcon({
         className: "",
@@ -176,37 +272,33 @@ function renderMarkers() {
       const marker = L.marker([eq.lat, eq.lon], { icon: triangleIcon });
 
       marker.bindPopup(`
-            <div class="text-xs">
-              <div class="font-bold text-sm mb-1" style="color:${color};">
-                🔺 Latest earthquake
-              </div>
-              <div class="font-bold text-base mb-1" style="color:${color};">
-                Magnitude: ${magLabel}
-              </div>
-              <div class="text-slate-400">${
-                eq.location || "Unknown location"
-              }</div>
-              <div class="text-slate-400 mt-1">${formatDateTime(
-                eq.datetime
-              )}</div>
-              <div class="text-slate-400">Depth: ${eq.depth_km ?? "?"} km</div>
-              ${
-                eq.detailLink
-                  ? `<a href="${eq.detailLink}" target="_blank"
-                       class="underline text-sky-300 hover:text-sky-200 mt-1 block">
-                       View PHIVOLCS Report →
-                     </a>`
-                  : ""
-              }
-              <div class="mt-1 text-[11px] text-slate-400">Source: PHIVOLCS</div>
-            </div>
-          `);
+        <div class="text-xs">
+          <div class="font-bold text-sm mb-1" style="color:${color};">
+            🔺 Latest earthquake
+          </div>
+          <div class="font-bold text-base mb-1" style="color:${color};">
+            Magnitude: ${magLabel}
+          </div>
+          <div class="text-slate-400">${eq.location || "Unknown location"}</div>
+          <div class="text-slate-400 mt-1">${formatDateTime(eq.datetime)}</div>
+          <div class="text-slate-400">Depth: ${eq.depth_km ?? "?"} km</div>
+          ${
+            eq.detailLink
+              ? `<a href="${eq.detailLink}" target="_blank"
+                   class="underline text-sky-300 hover:text-sky-200 mt-1 block">
+                   View PHIVOLCS Report →
+                 </a>`
+              : ""
+          }
+          <div class="mt-1 text-[11px] text-slate-400">Source: PHIVOLCS</div>
+        </div>
+      `);
 
       marker.addTo(markersLayer);
       return; // skip circle logic for latest
     }
 
-    // All other quakes → circle markers
+    // 🟢 All other quakes → circle markers
     const circle = L.circleMarker([eq.lat, eq.lon], {
       radius: size,
       weight: 2,
@@ -216,33 +308,33 @@ function renderMarkers() {
     });
 
     const popupHtml = `
-          <div class="text-xs z-50">
-            <div class="font-bold text-lg mb-1" style="color: ${color};">
-              Magnitude: ${magLabel}
-            </div>
-            <div class="text-slate-400">${
-              eq.location || "Unknown location"
-            }</div>
-            <div class="text-slate-400 mt-1">${formatDateTime(
-              eq.datetime
-            )}</div>
-            <div class="text-slate-400">Depth: ${eq.depth_km ?? "?"} km</div>
-            ${
-              eq.detailLink
-                ? `<a href="${eq.detailLink}" target="_blank"
-                    class="underline text-sky-300 hover:text-sky-200 mt-1 block">
-                    View PHIVOLCS Report →
-                  </a>`
-                : ""
-            }
-            <div class="mt-1 text-[11px] text-slate-400">Source: PHIVOLCS</div>
-          </div>
-        `;
+      <div class="text-xs">
+        <div class="font-bold text-lg mb-1" style="color: ${color};">
+          Magnitude: ${magLabel}
+        </div>
+        <div class="text-slate-400">${eq.location || "Unknown location"}</div>
+        <div class="text-slate-400 mt-1">${formatDateTime(eq.datetime)}</div>
+        <div class="text-slate-400">Depth: ${eq.depth_km ?? "?"} km</div>
+        ${
+          eq.detailLink
+            ? `<a href="${eq.detailLink}" target="_blank"
+                class="underline text-sky-300 hover:text-sky-200 mt-1 block">
+                View PHIVOLCS Report →
+              </a>`
+            : ""
+        }
+        <div class="mt-1 text-[11px] text-slate-400">Source: PHIVOLCS</div>
+      </div>
+    `;
 
     circle.bindPopup(popupHtml);
     circle.addTo(markersLayer);
   });
 }
+
+// -------------------------
+// TABLE RENDER (DESKTOP + MOBILE MODAL)
+// -------------------------
 
 function renderTable() {
   const filtered = getFilteredEarthquakes();
@@ -295,7 +387,6 @@ function renderTable() {
     const trDesktop = document.createElement("tr");
     trDesktop.className = "border-b border-slate-800/60 hover:bg-slate-800/50";
 
-    // If we have a PHIVOLCS detail link, make row clickable
     if (eq.detailLink) {
       trDesktop.classList.add("cursor-pointer");
       trDesktop.addEventListener("click", () => {
@@ -327,7 +418,10 @@ function renderTable() {
     filtered.length + (filtered.length === 1 ? " event" : " events");
 }
 
-// ---- Helpers to parse your API format ----
+// -------------------------
+// DATA HELPERS
+// -------------------------
+
 function parseNumber(val) {
   if (val === undefined || val === null) return null;
   const num = parseFloat(String(val).replace(/[^\d.-]/g, ""));
@@ -343,7 +437,10 @@ function parseCoord(val) {
   return isNaN(num) ? null : sign * num;
 }
 
-// ---- Locate user ----
+// -------------------------
+// GEOLOCATION
+// -------------------------
+
 function locateUser() {
   if (!navigator.geolocation) {
     showError("Geolocation is not supported by this browser.");
@@ -364,10 +461,10 @@ function locateUser() {
 
       userLocationMarker = L.marker([latitude, longitude]).addTo(userLayer)
         .bindPopup(`
-              <div class="text-xs">
-                <div class="font-semibold mb-1">You are here!</div>
-              </div>
-            `);
+          <div class="text-xs">
+            <div class="font-semibold mb-1">You are here!</div>
+          </div>
+        `);
 
       userLocationCircle = L.circle([latitude, longitude], {
         radius: accuracy || 500,
@@ -402,6 +499,10 @@ function locateUser() {
     }
   );
 }
+
+// -------------------------
+// FETCH & LOAD EARTHQUAKES
+// -------------------------
 
 async function loadEarthquakes() {
   tableBody.innerHTML =
@@ -450,7 +551,9 @@ async function loadEarthquakes() {
   }
 }
 
-// ---- UI Wiring ----
+// -------------------------
+// UI WIRING
+// -------------------------
 
 // Mobile navbar toggle
 mobileBtn?.addEventListener("click", () => {
@@ -472,28 +575,47 @@ openRecentBtn?.addEventListener("click", openRecentModal);
 closeRecentBtn?.addEventListener("click", closeRecentModal);
 recentModalBackdrop?.addEventListener("click", closeRecentModal);
 
-// Location permission modal logic
+// ---- Location permission modal logic with cooldown ----
 window.addEventListener("DOMContentLoaded", () => {
-  if (locationModal) {
+  if (locationModal && shouldShowLocationModal()) {
     locationModal.classList.remove("hidden");
   }
 });
 
 allowLocationBtn?.addEventListener("click", () => {
+  recordLocationPromptTime();
   locationModal.classList.add("hidden");
   locateUser();
 });
 
 denyLocationBtn?.addEventListener("click", () => {
+  recordLocationPromptTime();
   locationModal.classList.add("hidden");
 });
 
-// Filters & buttons
-minMagSelect.addEventListener("change", () => {
+// -------------------------
+// FILTERS & BUTTONS (SYNC DESKTOP + MOBILE)
+// -------------------------
+
+// Desktop min magnitude changed
+minMagSelect?.addEventListener("change", () => {
+  if (minMagSelectMobile) {
+    minMagSelectMobile.value = minMagSelect.value;
+  }
   renderMarkers();
   renderTable();
 });
 
+// Mobile min magnitude changed
+minMagSelectMobile?.addEventListener("change", () => {
+  if (minMagSelect) {
+    minMagSelect.value = minMagSelectMobile.value;
+  }
+  renderMarkers();
+  renderTable();
+});
+
+// Refresh buttons
 refreshBtn?.addEventListener("click", () => {
   loadEarthquakes();
 });
@@ -502,8 +624,131 @@ refreshBtnMobile?.addEventListener("click", () => {
   loadEarthquakes();
 });
 
-locateBtn.addEventListener("click", () => {
+// Locate buttons (desktop + mobile)
+locateBtn?.addEventListener("click", () => {
   locateUser();
+});
+
+locateBtnMobile?.addEventListener("click", () => {
+  locateUser();
+});
+
+// Map fullscreen elements
+const mapSection = document.getElementById("map-section");
+const navbar = document.querySelector("nav");
+const fullscreenBtn = document.getElementById("map-fullscreen-btn");
+const footerEl = document.getElementById("page-footer");
+
+let isMapFullscreen = false;
+let prevMapSectionStyle = {};
+
+
+// Enter fullscreen: only map, no borders, below navbar
+function enterMapFullscreen() {
+  if (!mapSection) return;
+
+  const navHeight = navbar ? navbar.getBoundingClientRect().height : 0;
+
+  prevMapSectionStyle = {
+    position: mapSection.style.position,
+    top: mapSection.style.top,
+    left: mapSection.style.left,
+    right: mapSection.style.right,
+    bottom: mapSection.style.bottom,
+    height: mapSection.style.height,
+    zIndex: mapSection.style.zIndex,
+  };
+
+  mapSection.style.position = "fixed";
+  mapSection.style.top = navHeight + "px";
+  mapSection.style.left = "0";
+  mapSection.style.right = "0";
+  mapSection.style.bottom = "0";
+  mapSection.style.height = `calc(100vh - ${navHeight}px)`;
+  mapSection.style.zIndex = "40";
+  mapSection.classList.add("map-fullscreen");
+
+  // ✅ put footer on top of the map
+  if (footerEl) {
+    footerEl.classList.add("footer-overlay");
+  }
+
+  document.body.style.overflow = "hidden";
+
+  if (fullscreenBtn) {
+    fullscreenBtn.innerHTML = `
+      <i data-lucide="minimize-2" class="w-3 h-3"></i>
+      <span class="hidden sm:inline">Exit fullscreen</span>
+    `;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  setTimeout(() => map.invalidateSize(), 150);
+  isMapFullscreen = true;
+}
+
+function exitMapFullscreen() {
+  if (!mapSection) return;
+
+  mapSection.style.position = prevMapSectionStyle.position || "";
+  mapSection.style.top = prevMapSectionStyle.top || "";
+  mapSection.style.left = prevMapSectionStyle.left || "";
+  mapSection.style.right = prevMapSectionStyle.right || "";
+  mapSection.style.bottom = prevMapSectionStyle.bottom || "";
+  mapSection.style.height = prevMapSectionStyle.height || "";
+  mapSection.style.zIndex = prevMapSectionStyle.zIndex || "";
+  mapSection.classList.remove("map-fullscreen");
+
+  // ✅ remove overlay from footer
+  if (footerEl) {
+    footerEl.classList.remove("footer-overlay");
+  }
+
+  document.body.style.overflow = "";
+
+  if (fullscreenBtn) {
+    fullscreenBtn.innerHTML = `
+      <i data-lucide="maximize-2" class="w-3 h-3"></i>
+      <span class="hidden sm:inline">Fullscreen</span>
+    `;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  setTimeout(() => map.invalidateSize(), 150);
+  isMapFullscreen = false;
+}
+
+// -------------------------
+// EXIT FULLSCREEN WHEN GOING TO DESKTOP (lg)
+// -------------------------
+
+// Tailwind lg breakpoint
+const lgMediaQuery = window.matchMedia("(min-width: 468px)");
+
+function handleLgChange(e) {
+  // If we just entered lg AND map is currently fullscreen (mobile),
+  // automatically exit fullscreen.
+  if (e.matches && isMapFullscreen) {
+    exitMapFullscreen();
+  }
+}
+
+// For modern browsers
+lgMediaQuery.addEventListener("change", handleLgChange);
+
+// (Optional) Fallback for older browsers
+if (lgMediaQuery.addListener) {
+  lgMediaQuery.addListener(handleLgChange);
+}
+
+
+// Toggle fullscreen on button click
+fullscreenBtn?.addEventListener("click", () => {
+  if (isMapFullscreen) {
+    exitMapFullscreen();
+  } else {
+    enterMapFullscreen();
+  }
 });
 
 // Recompute marker size on zoom
@@ -511,5 +756,7 @@ map.on("zoomend", () => {
   renderMarkers();
 });
 
-// Initial load
+// -------------------------
+// INITIAL LOAD
+// -------------------------
 loadEarthquakes();

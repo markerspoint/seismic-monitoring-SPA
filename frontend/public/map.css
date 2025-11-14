@@ -1,9 +1,52 @@
+/* #map {
+  height: 480px;
+} */
+
+/* Map itself always fills its wrapper */
 #map {
+  height: 100%;
+}
+
+/* Normal (non-fullscreen) height */
+.map-wrapper {
   height: 480px;
 }
 
+#map-section.map-fullscreen .map-wrapper {
+  height: 100%;
+}
+
+/* Fullscreen: section fills viewport under navbar */
+#map-section.map-fullscreen {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  /* adjust this to your navbar height (try 64px or 56px) */
+  top: 64px;
+
+  height: calc(100vh - 64px);
+
+  border-radius: 0;
+  border: none;
+  z-index: 40; /* navbar already has z-50 */
+}
+
+/* In fullscreen, let the wrapper fill the whole section */
+#map-section.map-fullscreen .map-wrapper {
+  height: 100%;
+}
+
+/* Fullscreen button is always visible above tiles/legend */
+#map-fullscreen-btn {
+  z-index: 1100;
+}
+
+
 .magnitude-legend {
-  background: rgba(15, 23, 42, 0.92); 
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(6px);
   color: #e5e7eb;
   padding: 6px 8px;
   border-radius: 0.5rem;
@@ -31,6 +74,25 @@
   border: 1px solid rgba(15, 23, 42, 0.9);
 }
 
+/* collapsible */
+.magnitude-legend .legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  gap: 10px;
+}
+
+.magnitude-legend .toggle-icon {
+  font-size: 11px;
+  margin-top: -4px;
+  opacity: 0.8;
+}
+
+.magnitude-legend.collapsed .legend-body {
+  display: none;
+}
+
 /* Triangle marker for latest quake */
 .latest-quake {
   width: 0;
@@ -39,4 +101,14 @@
   border-right: 10px solid transparent;
   border-bottom: 18px solid red;
   transform: translate(-10px, -18px);
+}
+
+
+/* Footer overlay when map is fullscreen */
+#page-footer.footer-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60; 
 }

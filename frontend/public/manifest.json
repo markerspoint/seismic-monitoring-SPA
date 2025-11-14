@@ -1,0 +1,20 @@
+{
+  "name": "PH Seismic Monitor",
+  "short_name": "Seismic",
+  "icons": [
+    {
+      "src": "./img/image.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./img/image.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000"
+}
